@@ -1,4 +1,4 @@
-name: Update 1Hosts Lite
+name: Update ADBlock Rules
 
 on:
   schedule:
@@ -20,24 +20,34 @@ jobs:
           curl -sSL -o 1hosts-lite.txt https://raw.githubusercontent.com/badmojr/1Hosts/master/Lite/domains.txt
           wc -l 1hosts-lite.txt
 
-      - name: Convert to sing-box JSON
+      - name: Convert 1Hosts Lite to sing-box JSON
         run: python3 convert.py 1hosts-lite.txt 1hosts-lite.json
 
-      - name: Download sing-box and compile
+      - name: Download sing-box and compile 1hosts-lite.srs
         run: |
           curl -sSL -o sing-box.tar.gz https://github.com/SagerNet/sing-box/releases/download/v1.14.0/sing-box-1.14.0-linux-amd64.tar.gz
           tar xzf sing-box.tar.gz
           ./sing-box-1.14.0-linux-amd64/sing-box rule-set compile --output 1hosts-lite.srs 1hosts-lite.json
           ls -la 1hosts-lite.srs
 
+      - name: Mirror anti-ad.srs (official)
+        run: |
+          curl -sSL -o anti-ad.srs https://anti-ad.net/anti-ad-sing-box.srs
+          ls -la anti-ad.srs
+
+      - name: Mirror geosite-category-ads-all.srs (official)
+        run: |
+          curl -sSL -o geosite-category-ads-all.srs https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs
+          ls -la geosite-category-ads-all.srs
+
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add 1hosts-lite.srs
+          git add 1hosts-lite.srs anti-ad.srs geosite-category-ads-all.srs
           if git diff --cached --quiet; then
             echo "No changes since last run, skip push"
             exit 0
           fi
-          git commit -m "Update 1Hosts Lite $(date -u +%F)"
+          git commit -m "Update rule-sets $(date -u +%F)"
           git push
